@@ -9,7 +9,7 @@
 // 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ?>
-<?php if(count($_POST) <= 0): ?>
+<?php if($_SERVER['REQUEST_METHOD'] != 'POST'): ?>
 <!DOCTYPE html>
 <head>
 	<meta charset="utf-8">
@@ -49,6 +49,7 @@
 		#folioInfo legend {
 			font-weight:bold;
 		}
+
 	</style>
 </head>
 <body>
@@ -128,8 +129,9 @@ $fontSize = (int)(array_key_exists('fontSize', $_POST) ? $_POST['fontSize'] : nu
 $oneFile = (bool)(array_key_exists('oneFile', $_POST) ? $_POST['oneFile'] : null);
 
 // Modificar si es necesario
-$template = './folio_template.pdf';
-$folioDir = './folios';
+$template = 'folio_template.pdf';
+$folioDir = 'folios';
+$oneFilePath = "$folioDir/folios.pdf";
 
 if (!isset($from) && !isset($to)) {
 	$from = 1;
@@ -232,7 +234,7 @@ try {
 	
 		}
 
-		$pdf->Output("$folioDir/folios.pdf", 'F');
+		$pdf->Output($oneFilePath, 'F');
 
 		// Delete generated files
 		foreach ($files as $file) {
@@ -246,11 +248,63 @@ try {
 	die($e->getMessage());
 }
 
-$filepath = dirname(__FILE__) . $folioDir;
+$urlToFile = function($file) {
+
+	$url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . 
+			'://' . "{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
+	
+	$url .= htmlspecialchars($file);
+
+	return $url;
+};
+
+
+if (isset($oneFile) && $oneFile) {
+	$files = [$oneFilePath];
+}
+
+$fileList = "<ul>";
+
+foreach ($files as $file) {
+	$url = $urlToFile($file);
+	$fileList .= '<li><a href="' . $url .'" target="_blank">' . $url . '</a></li>';
+}
+
+$fileList .= "</ul>";
+
+
 ?>
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<title>Ninja Folio Maker</title>
+	<style type="text/css">
+		body {
+			padding:2em;
+		}
+		button {
+			padding: 1em; 
+			width:10em; 
+			text-transform: uppercase;
+			font-weight: bold;
+		}
 
-<h3>Trabajo Terminado.</h3>
-<p>Los Archivos han sido guardados en <?php echo $filepath ?> </p>
-<a href="./">Reiniciar</a>
+		li {
+			margin-top:10px;
+		}
+	</style>
+</head>
+<body>
+	<h3>Trabajo Terminado.</h3>
+	<p>Archivos Generados</p>
 
+	<?php echo $fileList ?>
+
+	<a href="./">
+		<button>
+			Reiniciar
+		</button>
+	</a>
+</body>
+</html>
 <?php endif ?>
