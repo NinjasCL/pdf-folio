@@ -185,14 +185,18 @@ try {
 
 		$pdf = new FPDI();
 
-		$pdf->AddPage(); 
-
 		$pdf->setSourceFile($template); 
 
 		$tplIdx = $pdf->importPage(1); 
+ 
+		$specs = $pdf->getTemplateSize($tplidx);
 
-		//use the imported page and place it at point 0,0; calculate width and height
-		//automaticallay and ajust the page size to the size of the imported page 
+		// P = Vertical Layout
+		// L = Horizontal Layout
+   		$pdf->addPage($specs['h'] > $specs['w'] ? 'P' : 'L');
+
+   		// use the imported page and place it at point 0,0; calculate width and height
+		// automaticallay and ajust the page size to the size of the imported page
 		$pdf->useTemplate($tplIdx, 0, 0, 0, 0, true); 
 
 		// now write some text above the imported page 
@@ -226,10 +230,13 @@ try {
 			for ($i = 0; $i < $pageCount; $i++) {
 
 				// https://www.setasign.com/products/fpdi/about/#code
-				$tpl = $pdf->importPage($i + 1, '/MediaBox');
+				$tplidx = $pdf->importPage($i + 1, '/MediaBox');
 
-				$pdf->addPage();
-				$pdf->useTemplate($tpl);
+				$specs = $pdf->getTemplateSize($tplidx);
+
+   				$pdf->addPage($specs['h'] > $specs['w'] ? 'P' : 'L');
+
+				$pdf->useTemplate($tplidx, 0, 0, 0, 0, true); 
 			}
 	
 		}
